@@ -9,7 +9,6 @@ A logging library initially written for the Untitled Vulkan Game Engine
 - Customisability of the log file
 - Colour coded logging
 ## Install
-### Windows 
-Coming soon!
-### Linux
-Coming soon!
+This is a header only library so just put it into your project and it will just work
+## Learning 
+There are a few short learning articles in the [wiki](https://github.com/MadLadSquad/UVKLog/wiki) where you can learn about the library
