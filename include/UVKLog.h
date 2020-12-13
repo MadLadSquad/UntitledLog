@@ -130,41 +130,41 @@ public:
                 file << "Success: " << " " << ctime(&CurrentTime) << message;
                 for (auto elem : list)
                 {
-                    std::cout << " " << elem;
+                    file << " " << elem;
                 }
-                std::cout << std::endl;
+                file << std::endl;
                 break;
             case WARNING:
                 file << "Warning: " << " " << ctime(&CurrentTime) << message;
                 for (auto elem : list)
                 {
-                    std::cout << " " << elem;
+                    file << " " << elem;
                 }
-                std::cout << std::endl;
+                file << std::endl;
                 break;
             case ERROR:
                 file << "Error: " << " " << ctime(&CurrentTime) << message;
                 for (auto elem : list)
                 {
-                    std::cout << " " << elem;
+                    file << " " << elem;
                 }
-                std::cout << std::endl;
+                file << std::endl;
                 break;
             case NOTE:
                 file << "Note: " << " " << ctime(&CurrentTime) << message;
                 for (auto elem : list)
                 {
-                    std::cout << " " << elem;
+                    file << " " << elem;
                 }
-                std::cout << std::endl;
+                file << std::endl;
                 break;
             case MESSAGE:
                 file << "Message: " << " " << ctime(&CurrentTime) << message;
                 for (auto elem : list)
                 {
-                    std::cout << " " << elem;
+                    file << " " << elem;
                 }
-                std::cout << std::endl;
+                file << std::endl;
                 break;
         }
     }
