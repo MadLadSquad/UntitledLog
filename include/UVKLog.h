@@ -183,3 +183,5 @@ private:
 
     std::ofstream file;
 };
+
+extern UVKLog log;
