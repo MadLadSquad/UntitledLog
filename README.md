@@ -1,4 +1,4 @@
-# UVKLog
+# UntitledLog
 A logging library initially written for the Untitled Vulkan Game Engine
 > Version 1.0
 ## Features
@@ -8,4 +8,4 @@ A logging library initially written for the Untitled Vulkan Game Engine
 - Logs to a log file
 - Colour coded logging
 ## Learning and install
-There are a few short learning articles in the [wiki](https://github.com/MadLadSquad/UVKLog/wiki). Installation is also located there!
+There are a few short learning articles in the [wiki](https://github.com/MadLadSquad/UntitledLog/wiki). Installation is also located there!
