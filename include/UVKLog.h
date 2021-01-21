@@ -208,4 +208,4 @@ private:
     std::ofstream file;
 };
 
-inline UVKLog Log;
+inline UVKLog logger;
