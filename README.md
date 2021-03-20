@@ -9,5 +9,6 @@ A logging library initially written for the Untitled Vulkan Game Engine
 - Variadic functions
 - Profiler functions
 - Error shutdown and breaking
+- Dear imgui console widget
 ## Learning and install
 There are a few short learning articles in the [wiki](https://github.com/MadLadSquad/UntitledLog/wiki). Installation is also located there!
