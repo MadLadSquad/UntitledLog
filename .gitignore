@@ -36,3 +36,4 @@ main.cpp
 cmake-build-debug/
 cmake-build-release/
 CMakeLists.txt
+build/
