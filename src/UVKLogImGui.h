@@ -1,6 +1,5 @@
 #pragma once
 #include "UVKLog.h"
-#define UVK_LOG_IMGUI
 #ifdef UVK_LOG_IMGUI
 #if __has_include(<imgui.h>)
 #include "imgui.h"
