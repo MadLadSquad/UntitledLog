@@ -102,7 +102,9 @@ public:
 
         if (bError)
         {
+#ifdef NO_INSTANT_CRASH
             std::cin.get();
+#endif
             throw std::runtime_error(" ");
         }
     }
@@ -146,7 +148,9 @@ public:
 
         if (bError)
         {
+#ifdef NO_INSTANT_CRASH
             std::cin.get();
+#endif
             throw std::runtime_error(" ");
         }
     }
