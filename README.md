@@ -4,7 +4,7 @@
 [![Discord](https://img.shields.io/discord/717037253292982315.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/4wgH8ZE)
 
 A logging library initially written for the Untitled Vulkan Game Engine
-> Version 2.0
+> Version 2.0.1.0
 
 ## Features
 - Logs to the console
