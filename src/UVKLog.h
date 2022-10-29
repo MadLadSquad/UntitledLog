@@ -6,167 +6,173 @@
 #include <functional>
 #include <sstream>
 
-#define LogColGreen "\x1B[32m"
-#define LogColYellow "\x1B[33m"
-#define LogColRed "\x1B[31m"
-#define LogColWhite "\x1B[37m"
-#define LogColBlue "\x1B[34m"
-#define LogColNull "\033[0m"
-
-enum LogType
+namespace UVKLog
 {
-    UVK_LOG_TYPE_WARNING,
-    UVK_LOG_TYPE_ERROR,
-    UVK_LOG_TYPE_NOTE,
-    UVK_LOG_TYPE_SUCCESS,
-    UVK_LOG_TYPE_MESSAGE
-};
-
-struct CommandType
-{
-    std::string cmd; // the name of the command;
-    std::string cmdHint; // shown in the help message
-    std::function<void(void)> func; // executes the command instructions
-};
-
-class Timer
-{
-public:
-    void startRecording();
-    void stopRecording();
-
-    ~Timer();
-
-    [[nodiscard]] double getDuration() const;
-private:
-    double duration = 0;
-
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-};
-
-class UVKLog
-{
-public:
-    UVKLog();
-    ~UVKLog();
-
-    void setCrashOnError(bool bErr);
-    void setLogFileLocation(const char* file);
-
-    // A general logging function that is useful for when you want to print to the console and to a file
-    template<typename... args>
-    void generalLog(const char* message, LogType messageType, args&&... argv)
+    enum [[maybe_unused]] LogColour
     {
-        consoleLog(message, messageType, argv...);
-        fileLog(message, messageType, argv...);
-    }
+        UVK_LOG_COLOUR_GREEN = 0,
+        UVK_LOG_COLOUR_YELLOW = 1,
+        UVK_LOG_COLOUR_RED = 2,
+        UVK_LOG_COLOUR_WHITE = 3,
+        UVK_LOG_COLOUR_BLUE = 4,
+        UVK_LOG_COLOUR_NULL = 5
+    };
 
-    // Simple console log function that acts similarly to printf but doesn't require formatting
-    template<typename... args>
-    void consoleLog(const char* message, LogType messageType, args&&... argv)
+    enum LogType
     {
-        bool bError = false;
-        std::stringstream ss;
+        UVK_LOG_TYPE_WARNING = 1,
+        UVK_LOG_TYPE_ERROR = 2,
+        UVK_LOG_TYPE_NOTE = 4,
+        UVK_LOG_TYPE_SUCCESS = 0,
+        UVK_LOG_TYPE_MESSAGE = 3
+    };
 
-        switch (messageType)
+    enum [[maybe_unused]] LogOperations
+    {
+        // This is the default operation
+        UVK_LOG_OPERATION_TERMINAL,
+        UVK_LOG_OPERATION_FILE,
+        UVK_LOG_OPERATION_FILE_AND_TERMINAL,
+    };
+
+    // The offset by which the names of the given message types are listed in the logColours array below
+    constexpr uint8_t logTypeOffset = 6;
+
+    // A constexpr list of strings, elements 0-5 are escape codes for colours, 6-11 are the messages used for the given
+    // escape colours
+    constexpr const char* logColours[] =
+    {
+        "\x1b[32m",
+        "\x1b[33m",
+        "\x1b[31m",
+        "\x1b[37m",
+        "\x1b[34m",
+        "\x1b[0m",
+        "Success",
+        "Warning",
+        "Error",
+        "Message",
+        "Note",
+        "Null"
+    };
+
+    struct CommandType
+    {
+        std::string cmd; // the name of the command;
+        std::string cmdHint; // shown in the help message
+        std::function<void(void)> func; // executes the command instructions
+    };
+
+    class LoggerInternal
+    {
+    public:
+        LoggerInternal() noexcept;
+        ~LoggerInternal() noexcept;
+    private:
+        friend class Logger;
+        friend class UVKLogImGui;
+
+        template<bool bFile, typename... args>
+        void agnostic(const char* message, LogType type, args&&... argv)
         {
-        case UVK_LOG_TYPE_WARNING:
-            ss << LogColYellow << "[" << getCurrentTime() << "] Warning: " << message;
-            break;
-        case UVK_LOG_TYPE_ERROR:
-            ss << LogColRed << "[" << getCurrentTime() << "] Error: ";
-
-            if (bErroring)
-            {
+            std::string output;
+            bool bError = false;
+            if (type == UVK_LOG_TYPE_ERROR && bUsingErrors)
                 bError = true;
+
+            output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
+            std::stringstream ss;
+            (ss << ... << argv);
+            output += ss.str();
+
+            if constexpr (bFile)
+                fileout << output << '\n';
+            else
+                std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << '\n';
+
+            messageLog.emplace_back(std::make_pair(output, type));
+
+            if (bError)
+            {
+#ifdef NO_INSTANT_CRASH
+                std::cin.get();
+#endif
+                std::terminate();
             }
-            break;
-        case UVK_LOG_TYPE_NOTE:
-            ss << LogColBlue << "[" << getCurrentTime() << "] Note: ";
-            break;
-        case UVK_LOG_TYPE_SUCCESS:
-            ss << LogColGreen << "[" << getCurrentTime() << "] Success: ";
-            break;
-        case UVK_LOG_TYPE_MESSAGE:
-            ss << LogColWhite << "[" << getCurrentTime() << "] Message: ";
-            break;
         }
-        ss << message;
-        (ss << ... << argv);
 
-        std::cout << ss.str() << LogColNull << std::endl;
+        std::ofstream fileout;
+        bool bUsingErrors = false;
+        std::vector<std::pair<std::string, LogType>> messageLog;
 
-        std::string log = ss.str();
-        log.erase(0, 5);
-        messageLog.emplace_back(std::make_pair(log, messageType));
+        std::vector<CommandType> commands;
 
-        if (bError)
-        {
-#ifdef NO_INSTANT_CRASH
-            std::cin.get();
-#endif
-            throw std::runtime_error(" ");
-        }
-    }
+        LogOperations operationType = UVK_LOG_OPERATION_TERMINAL;
 
-    // Simple file logging function
-    template<typename... args>
-    void fileLog(const char* message, LogType messageType, args&&... argv)
+        static std::string getCurrentTime();
+        void shutdownFileStream();
+    };
+
+    inline LoggerInternal loggerInternal;
+
+    /**
+     * @brief Logs a message to the terminal, a file or both
+     */
+    class Logger
     {
-        bool bError = false;
-        std::stringstream ss;
-        ss << "[" << getCurrentTime();
-        switch (messageType)
+    public:
+        // If set to true calling log with the UVK_LOG_TYPE_ERROR will terminate the application
+        static void setCrashOnError(bool& bError) noexcept;
+
+        // Sets the current file to which we should log to if logging to files is enabled
+        static void setCurrentLogFile(const char* file) noexcept;
+
+        // Sets the current log operation, useful for enabling/disabling logging to different streams
+        static void setLogOperation(LogOperations op) noexcept;
+
+        /**
+         * @brief Logs a message and a templated variadic list of arguments to a stream depending on the current log
+         * operation
+         * @tparam args - A templated variadic arguments list
+         * @param message - The initial message to be printed
+         * @param type - The log type
+         * @param argv - The templated variadic list that will be unrolled into the given stream
+         */
+        template<typename... args>
+        static void log(const char* message, LogType type, args&&... argv) noexcept
         {
-            case UVK_LOG_TYPE_WARNING:
-                ss << "] Warning: " << message;
-                break;
-            case UVK_LOG_TYPE_ERROR:
-                ss << "] Error: ";
-
-                if (bErroring)
-                {
-                    bError = true;
-                }
-                break;
-            case UVK_LOG_TYPE_NOTE:
-                ss << "] Note: ";
-                break;
-            case UVK_LOG_TYPE_SUCCESS:
-                ss << "] Success: ";
-                break;
-            case UVK_LOG_TYPE_MESSAGE:
-                ss << "] Message: ";
-                break;
+            if (loggerInternal.operationType == UVK_LOG_OPERATION_FILE_AND_TERMINAL)
+            {
+                loggerInternal.agnostic<false>(message, type, argv...);
+                loggerInternal.agnostic<true>(message, type, argv...);
+            }
+            else if (loggerInternal.operationType == UVK_LOG_OPERATION_TERMINAL)
+                loggerInternal.agnostic<false>(message, type, argv...);
+            else
+                loggerInternal.agnostic<true>(message, type, argv...);
         }
-        ss << message;
-        (ss << ... << argv);
-        ss << LogColNull;
+    };
 
-        fileout << ss.str() << std::endl;
-        messageLog.emplace_back(std::make_pair(ss.str(), messageType));
+    /**
+     * @brief A small Timer class to track how much time a task takes
+     */
+    class Timer
+    {
+    public:
+        // Starts recording time
+        void start() noexcept;
 
-        if (bError)
-        {
-#ifdef NO_INSTANT_CRASH
-            std::cin.get();
-#endif
-            throw std::runtime_error(" ");
-        }
-    }
-private:
-    friend class UVKLogImGui;
+        // Stops recording time. Doesn't "stop" the recording but rather just saves the time it took. This allows you to
+        // call this function multiple times and use the "get" function to get the duration, which allows you to do if
+        // checks on how long something took. To reset the clock just call start again
+        void stop() noexcept;
 
+        // Returns the duration time between starting the timer and the last
+        [[nodiscard]] double get() const noexcept;
+        ~Timer() noexcept;
+    private:
+        double duration = 0;
 
-    static std::string getCurrentTime();
-    void shutdownFileStream();
-
-    std::ofstream fileout;
-    bool bErroring = false;
-    std::vector<std::pair<std::string, LogType>> messageLog;
-
-    std::vector<CommandType> commands;
-};
-
-// Yes I know global variables are bad but singletons are worse so I will not even bother
-inline UVKLog logger;
+        std::chrono::time_point<std::chrono::high_resolution_clock> startPos;
+    };
+}

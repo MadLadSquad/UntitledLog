@@ -6,53 +6,46 @@
     #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-void Timer::startRecording()
+#define TIME_COUNT(x) std::chrono::time_point_cast<std::chrono::microseconds>(x).time_since_epoch().count()
+
+void UVKLog::Timer::start() noexcept
 {
-    start = std::chrono::high_resolution_clock::now();
+    startPos = std::chrono::high_resolution_clock::now();
 }
 
-void Timer::stopRecording()
+void UVKLog::Timer::stop() noexcept
 {
     auto endTime = std::chrono::high_resolution_clock::now();
-    auto st = std::chrono::time_point_cast<std::chrono::microseconds>(start).time_since_epoch().count();
-    auto end = std::chrono::time_point_cast<std::chrono::microseconds>(endTime).time_since_epoch().count();
-
-    auto dt = end - st;
-
-    duration = (double)dt * 0.001;
+    duration = static_cast<double>(TIME_COUNT(endTime) - TIME_COUNT(startPos)) * 0.001;
 }
 
-Timer::~Timer()
+UVKLog::Timer::~Timer() noexcept
 {
-    stopRecording();
+    stop();
 }
 
-double Timer::getDuration() const
+double UVKLog::Timer::get() const noexcept
 {
     return duration;
 }
 
-UVKLog::~UVKLog()
+void UVKLog::Logger::setCrashOnError(bool& bError) noexcept
 {
-    shutdownFileStream();
+    loggerInternal.bUsingErrors = bError;
 }
 
-void UVKLog::setCrashOnError(bool bErr)
+void UVKLog::Logger::setCurrentLogFile(const char* file) noexcept
 {
-    bErroring = bErr;
+    loggerInternal.shutdownFileStream();
+    loggerInternal.fileout = std::ofstream(file);
 }
 
-void UVKLog::setLogFileLocation(const char* file)
+void UVKLog::Logger::setLogOperation(LogOperations op) noexcept
 {
-    fileout = std::ofstream(file);
+    loggerInternal.operationType = op;
 }
 
-void UVKLog::shutdownFileStream()
-{
-    fileout.close();
-}
-
-std::string UVKLog::getCurrentTime()
+std::string UVKLog::LoggerInternal::getCurrentTime()
 {
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
@@ -62,7 +55,12 @@ std::string UVKLog::getCurrentTime()
     return realTime;
 }
 
-UVKLog::UVKLog()
+void UVKLog::LoggerInternal::shutdownFileStream()
+{
+    fileout.close();
+}
+
+UVKLog::LoggerInternal::LoggerInternal() noexcept
 {
 #ifdef UVK_LOG_IMGUI
     const CommandType clear =
@@ -82,4 +80,9 @@ UVKLog::UVKLog()
     commands.emplace_back(clear);
     commands.emplace_back(help);
 #endif
+}
+
+UVKLog::LoggerInternal::~LoggerInternal() noexcept
+{
+    shutdownFileStream();
 }

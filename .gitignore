@@ -33,7 +33,6 @@
 main.cpp
 .idea/
 .vs/
-cmake-build-debug/
-cmake-build-release/
+cmake-build-*/
 CMakeLists.txt
 build/

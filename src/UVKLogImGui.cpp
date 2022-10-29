@@ -1,6 +1,7 @@
 #include "UVKLogImGui.h"
 #ifdef UVK_LOG_IMGUI
 #include "cpp/imgui_stdlib.h"
+
 void UVKLogImGui::setLogColour(ImVec4 colour, LogType type)
 {
     switch (type)
@@ -25,7 +26,7 @@ void UVKLogImGui::setLogColour(ImVec4 colour, LogType type)
 
 void UVKLogImGui::display()
 {
-    for (auto& a : logger.messageLog)
+    for (auto& a : loggerInternal.messageLog)
     {
         ImVec4 colour;
         switch (a.second)
@@ -55,7 +56,7 @@ void UVKLogImGui::display()
     ImGui::SameLine();
     if (ImGui::Button("Send##consoleCommand"))
     {
-        for (auto& a : logger.commands)
+        for (auto& a : loggerInternal.commands)
         {
             if (a.cmd == command)
             {
@@ -71,17 +72,17 @@ void UVKLogImGui::display()
 
 void UVKLogImGui::addToMessageLog(const std::string& msg, LogType type)
 {
-    logger.messageLog.emplace_back(msg, type);
+    loggerInternal.messageLog.emplace_back(msg, type);
 }
 
 void UVKLogImGui::addCommand(const CommandType& cmd)
 {
-    logger.commands.emplace_back(cmd);
+    loggerInternal.commands.emplace_back(cmd);
 }
 
 void UVKLogImGui::showHelpMessage()
 {
-    for (const auto& a : logger.commands)
+    for (const auto& a : loggerInternal.commands)
     {
         addToMessageLog(std::string(a.cmd) + " - " + a.cmdHint, UVK_LOG_TYPE_MESSAGE);
     }
