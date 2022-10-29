@@ -16,6 +16,8 @@
     #else
         #define UVK_PUBLIC_API
     #endif
+#else
+    #define UVK_PUBLIC_API
 #endif
 
 namespace UVKLog
