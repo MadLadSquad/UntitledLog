@@ -2,7 +2,7 @@
 #ifdef UVK_LOG_IMGUI
 #include "cpp/imgui_stdlib.h"
 
-void UVKLogImGui::setLogColour(ImVec4 colour, LogType type)
+void UVKLog::ImGuiConsole::setLogColour(ImVec4 colour, LogType type)
 {
     switch (type)
     {
@@ -24,7 +24,7 @@ void UVKLogImGui::setLogColour(ImVec4 colour, LogType type)
     }
 }
 
-void UVKLogImGui::display()
+void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox)
 {
     for (auto& a : loggerInternal.messageLog)
     {
@@ -52,7 +52,8 @@ void UVKLogImGui::display()
     }
 
     static std::string command;
-    ImGui::InputTextWithHint("##Input", "Enter any command here", &command);
+    if ((ImGui::InputTextWithHint("##Input", "Enter any command here", &command) || ImGui::IsItemActive()) && bInteractingWithTextbox != nullptr)
+        *bInteractingWithTextbox = true;
     ImGui::SameLine();
     if (ImGui::Button("Send##consoleCommand"))
     {
@@ -70,17 +71,17 @@ void UVKLogImGui::display()
         ImGui::SetScrollHereY(1.0f);
 }
 
-void UVKLogImGui::addToMessageLog(const std::string& msg, LogType type)
+void UVKLog::ImGuiConsole::addToMessageLog(const std::string& msg, LogType type)
 {
     loggerInternal.messageLog.emplace_back(msg, type);
 }
 
-void UVKLogImGui::addCommand(const CommandType& cmd)
+void UVKLog::ImGuiConsole::addCommand(const CommandType& cmd)
 {
     loggerInternal.commands.emplace_back(cmd);
 }
 
-void UVKLogImGui::showHelpMessage()
+void UVKLog::ImGuiConsole::showHelpMessage()
 {
     for (const auto& a : loggerInternal.commands)
     {
@@ -88,10 +89,10 @@ void UVKLogImGui::showHelpMessage()
     }
 }
 
-void UVKLogImGui::displayFull(bool& bOpen)
+void UVKLog::ImGuiConsole::displayFull(bool& bOpen, bool* bInteractingWithTextbox)
 {
     ImGui::Begin("Developer Console", &bOpen);
-    display();
+    display(bInteractingWithTextbox);
     ImGui::End();
 }
 #endif

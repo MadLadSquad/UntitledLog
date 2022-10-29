@@ -6,6 +6,18 @@
 #include <functional>
 #include <sstream>
 
+#ifdef UVK_LOG_EXPORT_FROM_LIBRARY
+    #ifdef _WIN32
+        #ifdef UVK_LIB_COMPILE
+            #define UVK_PUBLIC_API __declspec(dllexport)
+        #else
+            #define UVK_PUBLIC_API __declspec(dllimport)
+        #endif
+    #else
+        #define UVK_PUBLIC_API
+    #endif
+#endif
+
 namespace UVKLog
 {
     enum [[maybe_unused]] LogColour
@@ -56,7 +68,7 @@ namespace UVKLog
         "Null"
     };
 
-    struct CommandType
+    struct UVK_PUBLIC_API CommandType
     {
         std::string cmd; // the name of the command;
         std::string cmdHint; // shown in the help message
@@ -70,7 +82,7 @@ namespace UVKLog
         ~LoggerInternal() noexcept;
     private:
         friend class Logger;
-        friend class UVKLogImGui;
+        friend class ImGuiConsole;
 
         template<bool bFile, typename... args>
         void agnostic(const char* message, LogType type, args&&... argv)
@@ -86,9 +98,9 @@ namespace UVKLog
             output += ss.str();
 
             if constexpr (bFile)
-                fileout << output << '\n';
+                fileout << output << std::endl;
             else
-                std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << '\n';
+                std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << std::endl;
 
             messageLog.emplace_back(std::make_pair(output, type));
 
@@ -118,7 +130,7 @@ namespace UVKLog
     /**
      * @brief Logs a message to the terminal, a file or both
      */
-    class Logger
+    class UVK_PUBLIC_API Logger
     {
     public:
         // If set to true calling log with the UVK_LOG_TYPE_ERROR will terminate the application
@@ -156,7 +168,7 @@ namespace UVKLog
     /**
      * @brief A small Timer class to track how much time a task takes
      */
-    class Timer
+    class UVK_PUBLIC_API Timer
     {
     public:
         // Starts recording time

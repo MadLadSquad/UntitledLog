@@ -74,7 +74,7 @@ UVKLog::LoggerInternal::LoggerInternal() noexcept
     {
         .cmd = "help",
         .cmdHint = "Sends a help message",
-        .func = UVKLogImGui::showHelpMessage
+        .func = UVKLog::ImGuiConsole::showHelpMessage
     };
 
     commands.emplace_back(clear);

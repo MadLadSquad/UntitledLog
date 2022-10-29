@@ -6,18 +6,18 @@
 
 namespace UVKLog
 {
-    class ImGui
+    class UVK_PUBLIC_API ImGuiConsole
     {
     public:
-        void displayFull(bool& bOpen);
-        void display();
+        void displayFull(bool& bOpen, bool* bInteractingWithTextbox);
+        void display(bool* bInteractingWithTextbox);
 
         static void addToMessageLog(const std::string& msg, LogType type);
         static void addCommand(const CommandType& cmd);
 
         void setLogColour(ImVec4 colour, LogType type);
     private:
-        friend class UVKLog;
+        friend class LoggerInternal;
 
         static void showHelpMessage();
 
