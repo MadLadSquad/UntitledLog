@@ -77,7 +77,7 @@ namespace UVKLog
         std::function<void(void)> func; // executes the command instructions
     };
 
-    class LoggerInternal
+    class UVK_PUBLIC_API LoggerInternal
     {
     public:
         LoggerInternal() noexcept;
