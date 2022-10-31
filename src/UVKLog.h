@@ -136,7 +136,7 @@ namespace UVKLog
     {
     public:
         // If set to true calling log with the UVK_LOG_TYPE_ERROR will terminate the application
-        static void setCrashOnError(bool& bError) noexcept;
+        static void setCrashOnError(bool bError) noexcept;
 
         // Sets the current file to which we should log to if logging to files is enabled
         static void setCurrentLogFile(const char* file) noexcept;

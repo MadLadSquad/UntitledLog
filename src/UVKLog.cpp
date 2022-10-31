@@ -29,7 +29,7 @@ double UVKLog::Timer::get() const noexcept
     return duration;
 }
 
-void UVKLog::Logger::setCrashOnError(bool& bError) noexcept
+void UVKLog::Logger::setCrashOnError(bool bError) noexcept
 {
     loggerInternal.bUsingErrors = bError;
 }
