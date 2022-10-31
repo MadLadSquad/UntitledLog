@@ -87,7 +87,7 @@ namespace UVKLog
         friend class ImGuiConsole;
 
         template<bool bFile, typename... args>
-        void agnostic(const char* message, LogType type, args&&... argv)
+        void agnostic(const char* message, LogType type, args&&... argv) noexcept
         {
             std::string output;
             bool bError = false;
@@ -123,8 +123,8 @@ namespace UVKLog
 
         LogOperations operationType = UVK_LOG_OPERATION_TERMINAL;
 
-        static std::string getCurrentTime();
-        void shutdownFileStream();
+        static std::string getCurrentTime() noexcept;
+        void shutdownFileStream() noexcept;
     };
 
     inline LoggerInternal loggerInternal;

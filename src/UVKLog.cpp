@@ -45,7 +45,7 @@ void UVKLog::Logger::setLogOperation(LogOperations op) noexcept
     loggerInternal.operationType = op;
 }
 
-std::string UVKLog::LoggerInternal::getCurrentTime()
+std::string UVKLog::LoggerInternal::getCurrentTime() noexcept
 {
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
@@ -55,7 +55,7 @@ std::string UVKLog::LoggerInternal::getCurrentTime()
     return realTime;
 }
 
-void UVKLog::LoggerInternal::shutdownFileStream()
+void UVKLog::LoggerInternal::shutdownFileStream() noexcept
 {
     fileout.close();
 }
