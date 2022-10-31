@@ -9,17 +9,17 @@ namespace UVKLog
     class UVK_PUBLIC_API ImGuiConsole
     {
     public:
-        void displayFull(bool& bOpen, bool* bInteractingWithTextbox);
-        void display(bool* bInteractingWithTextbox);
+        void displayFull(bool& bOpen, bool* bInteractingWithTextbox) noexcept;
+        void display(bool* bInteractingWithTextbox) noexcept;
 
-        static void addToMessageLog(const std::string& msg, LogType type);
-        static void addCommand(const CommandType& cmd);
+        static void addToMessageLog(const std::string& msg, LogType type) noexcept;
+        static void addCommand(const CommandType& cmd) noexcept;
 
-        void setLogColour(ImVec4 colour, LogType type);
+        void setLogColour(ImVec4 colour, LogType type) noexcept;
     private:
         friend class LoggerInternal;
 
-        static void showHelpMessage();
+        static void showHelpMessage(const std::string&) noexcept;
 
         ImVec4 success = { 0.0f, 1.0f, 0.0f, 1.0f };
         ImVec4 warning = { 1.0f, 1.0f, 0.0f, 1.0f };

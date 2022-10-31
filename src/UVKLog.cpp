@@ -67,7 +67,7 @@ UVKLog::LoggerInternal::LoggerInternal() noexcept
     {
         .cmd = "clear",
         .cmdHint = "Clears the scroll buffer",
-        .func = [&](){ messageLog.clear(); },
+        .func = [&](const std::string&){ messageLog.clear(); },
     };
 
     const CommandType help

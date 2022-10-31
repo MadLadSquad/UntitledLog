@@ -2,7 +2,7 @@
 #ifdef UVK_LOG_IMGUI
 #include "cpp/imgui_stdlib.h"
 
-void UVKLog::ImGuiConsole::setLogColour(ImVec4 colour, LogType type)
+void UVKLog::ImGuiConsole::setLogColour(ImVec4 colour, LogType type) noexcept
 {
     switch (type)
     {
@@ -24,7 +24,7 @@ void UVKLog::ImGuiConsole::setLogColour(ImVec4 colour, LogType type)
     }
 }
 
-void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox)
+void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox) noexcept
 {
     for (auto& a : loggerInternal.messageLog)
     {
@@ -59,9 +59,9 @@ void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox)
     {
         for (auto& a : loggerInternal.commands)
         {
-            if (a.cmd == command)
+            if (command.rfind(a.cmd, 0) == 0)
             {
-                a.func();
+                a.func(command);
                 break;
             }
         }
@@ -71,17 +71,17 @@ void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox)
         ImGui::SetScrollHereY(1.0f);
 }
 
-void UVKLog::ImGuiConsole::addToMessageLog(const std::string& msg, LogType type)
+void UVKLog::ImGuiConsole::addToMessageLog(const std::string& msg, LogType type) noexcept
 {
     loggerInternal.messageLog.emplace_back(msg, type);
 }
 
-void UVKLog::ImGuiConsole::addCommand(const CommandType& cmd)
+void UVKLog::ImGuiConsole::addCommand(const CommandType& cmd) noexcept
 {
     loggerInternal.commands.emplace_back(cmd);
 }
 
-void UVKLog::ImGuiConsole::showHelpMessage()
+void UVKLog::ImGuiConsole::showHelpMessage(const std::string&) noexcept
 {
     for (const auto& a : loggerInternal.commands)
     {
@@ -89,7 +89,7 @@ void UVKLog::ImGuiConsole::showHelpMessage()
     }
 }
 
-void UVKLog::ImGuiConsole::displayFull(bool& bOpen, bool* bInteractingWithTextbox)
+void UVKLog::ImGuiConsole::displayFull(bool& bOpen, bool* bInteractingWithTextbox) noexcept
 {
     ImGui::Begin("Developer Console", &bOpen);
     display(bInteractingWithTextbox);

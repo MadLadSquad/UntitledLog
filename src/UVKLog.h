@@ -74,7 +74,7 @@ namespace UVKLog
     {
         std::string cmd; // the name of the command;
         std::string cmdHint; // shown in the help message
-        std::function<void(void)> func; // executes the command instructions
+        std::function<void(const std::string&)> func; // executes the command instructions
     };
 
     class UVK_PUBLIC_API LoggerInternal
