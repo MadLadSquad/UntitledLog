@@ -131,17 +131,21 @@ namespace UVKLog
 
     /**
      * @brief Logs a message to the terminal, a file or both
+     * @note UntitledImGuiFramework Event Safety - Any time
      */
     class UVK_PUBLIC_API Logger
     {
     public:
         // If set to true calling log with the UVK_LOG_TYPE_ERROR will terminate the application
+        // UntitledImGuiFramework Event Safety - Any time
         static void setCrashOnError(bool bError) noexcept;
 
         // Sets the current file to which we should log to if logging to files is enabled
+        // UntitledImGuiFramework Event Safety - Any time
         static void setCurrentLogFile(const char* file) noexcept;
 
         // Sets the current log operation, useful for enabling/disabling logging to different streams
+        // UntitledImGuiFramework Event Safety - Any time
         static void setLogOperation(LogOperations op) noexcept;
 
         /**
@@ -151,6 +155,7 @@ namespace UVKLog
          * @param message - The initial message to be printed
          * @param type - The log type
          * @param argv - The templated variadic list that will be unrolled into the given stream
+         * @note  UntitledImGuiFramework Event Safety - Any time
          */
         template<typename... args>
         static void log(const char* message, LogType type, args&&... argv) noexcept
@@ -169,20 +174,26 @@ namespace UVKLog
 
     /**
      * @brief A small Timer class to track how much time a task takes
+     * @note UntitledImGuiFramework Event Safety - Any time
      */
     class UVK_PUBLIC_API Timer
     {
     public:
         // Starts recording time
+        // UntitledImGuiFramework Event Safety - Any time
         void start() noexcept;
 
         // Stops recording time. Doesn't "stop" the recording but rather just saves the time it took. This allows you to
         // call this function multiple times and use the "get" function to get the duration, which allows you to do if
         // checks on how long something took. To reset the clock just call start again
+        //
+        // UntitledImGuiFramework Event Safety - Any time
         void stop() noexcept;
 
         // Returns the duration time between starting the timer and the last
+        // UntitledImGuiFramework Event Safety - Any time
         [[nodiscard]] double get() const noexcept;
+        // UntitledImGuiFramework Event Safety - Any time
         ~Timer() noexcept;
     private:
         double duration = 0;

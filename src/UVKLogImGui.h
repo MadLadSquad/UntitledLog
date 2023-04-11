@@ -6,15 +6,23 @@
 
 namespace UVKLog
 {
+    // UntitledImGuiFramework Event Safety - Any time
     class UVK_PUBLIC_API ImGuiConsole
     {
     public:
+        // UntitledImGuiFramework Event Safety - Any time
         void displayFull(bool& bOpen, bool* bInteractingWithTextbox) noexcept;
+        // UntitledImGuiFramework Event Safety - Any time
         void display(bool* bInteractingWithTextbox) noexcept;
 
+
+        // UntitledImGuiFramework Event Safety - Any time
         static void addToMessageLog(const std::string& msg, LogType type) noexcept;
+
+        // UntitledImGuiFramework Event Safety - Any time
         static void addCommand(const CommandType& cmd) noexcept;
 
+        // UntitledImGuiFramework Event Safety - Any time
         void setLogColour(ImVec4 colour, LogType type) noexcept;
     private:
         friend class LoggerInternal;
