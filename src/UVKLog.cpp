@@ -45,6 +45,11 @@ void UVKLog::Logger::setLogOperation(LogOperations op) noexcept
     loggerInternal.operationType = op;
 }
 
+void UVKLog::Logger::log(const char* message, UVKLog::LogType type) noexcept
+{
+    log(message, type, "");
+}
+
 std::string UVKLog::LoggerInternal::getCurrentTime() noexcept
 {
     auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());

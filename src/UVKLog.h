@@ -170,6 +170,9 @@ namespace UVKLog
             else
                 loggerInternal.agnostic<true>(message, type, argv...);
         }
+
+        // Specialization where we don't use the additional templated arguments, look at the log above for documentation
+        static void log(const char* message, LogType type) noexcept;
     };
 
     /**
