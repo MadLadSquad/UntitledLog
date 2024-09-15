@@ -6,18 +6,18 @@
 #include <functional>
 #include <sstream>
 
-#ifdef UVK_LOG_EXPORT_FROM_LIBRARY
+#ifdef MLS_EXPORT_LIBRARY
     #ifdef _WIN32
-        #ifdef UVK_LIB_COMPILE
-            #define UVK_PUBLIC_API __declspec(dllexport)
+        #ifdef MLS_LIB_COMPILE
+            #define MLS_PUBLIC_API __declspec(dllexport)
         #else
-            #define UVK_PUBLIC_API __declspec(dllimport)
+            #define MLS_PUBLIC_API __declspec(dllimport)
         #endif
     #else
-        #define UVK_PUBLIC_API
+        #define MLS_PUBLIC_API
     #endif
 #else
-    #define UVK_PUBLIC_API
+    #define MLS_PUBLIC_API
 #endif
 
 namespace UVKLog
@@ -70,14 +70,14 @@ namespace UVKLog
         "Null"
     };
 
-    struct UVK_PUBLIC_API CommandType
+    struct MLS_PUBLIC_API CommandType
     {
         std::string cmd; // the name of the command;
         std::string cmdHint; // shown in the help message
         std::function<void(const std::string&)> func; // executes the command instructions
     };
 
-    class UVK_PUBLIC_API LoggerInternal
+    class MLS_PUBLIC_API LoggerInternal
     {
     public:
         LoggerInternal() noexcept;
@@ -133,7 +133,7 @@ namespace UVKLog
      * @brief Logs a message to the terminal, a file or both
      * @note UntitledImGuiFramework Event Safety - Any time
      */
-    class UVK_PUBLIC_API Logger
+    class MLS_PUBLIC_API Logger
     {
     public:
         // If set to true calling log with the UVK_LOG_TYPE_ERROR will terminate the application
@@ -179,7 +179,7 @@ namespace UVKLog
      * @brief A small Timer class to track how much time a task takes
      * @note UntitledImGuiFramework Event Safety - Any time
      */
-    class UVK_PUBLIC_API Timer
+    class MLS_PUBLIC_API Timer
     {
     public:
         // Starts recording time

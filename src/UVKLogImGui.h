@@ -37,6 +37,6 @@ namespace UVKLog
     };
 }
 #else
-#error Dear ImGui is not in the include path!. Consider adding it so that "#include <imgui.h>" is a valid line
+#error Dear ImGui is not in the include path! Consider adding it so that "#include <imgui.h>" is a valid line
 #endif
 #endif
