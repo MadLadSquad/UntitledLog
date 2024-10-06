@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 #include <sstream>
+#include <exception>
 
 #ifdef MLS_EXPORT_LIBRARY
     #ifdef _WIN32
