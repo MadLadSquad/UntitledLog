@@ -6,49 +6,13 @@
 #include <functional>
 #include <sstream>
 #include <exception>
+#include "ULogCommon.h"
 
-#ifdef MLS_EXPORT_LIBRARY
-    #ifdef _WIN32
-        #ifdef MLS_LIB_COMPILE
-            #define MLS_PUBLIC_API __declspec(dllexport)
-        #else
-            #define MLS_PUBLIC_API __declspec(dllimport)
-        #endif
-    #else
-        #define MLS_PUBLIC_API
-    #endif
-#else
-    #define MLS_PUBLIC_API
-#endif
-
-namespace UVKLog
+namespace ULog
 {
-    enum [[maybe_unused]] LogColour
-    {
-        UVK_LOG_COLOUR_GREEN = 0,
-        UVK_LOG_COLOUR_YELLOW = 1,
-        UVK_LOG_COLOUR_RED = 2,
-        UVK_LOG_COLOUR_WHITE = 3,
-        UVK_LOG_COLOUR_BLUE = 4,
-        UVK_LOG_COLOUR_NULL = 5
-    };
-
-    enum LogType
-    {
-        UVK_LOG_TYPE_WARNING = 1,
-        UVK_LOG_TYPE_ERROR = 2,
-        UVK_LOG_TYPE_NOTE = 4,
-        UVK_LOG_TYPE_SUCCESS = 0,
-        UVK_LOG_TYPE_MESSAGE = 3
-    };
-
-    enum [[maybe_unused]] LogOperations
-    {
-        // This is the default operation
-        UVK_LOG_OPERATION_TERMINAL,
-        UVK_LOG_OPERATION_FILE,
-        UVK_LOG_OPERATION_FILE_AND_TERMINAL,
-    };
+    typedef ULog_LogColour LogColour;
+    typedef ULog_LogOperations LogOperations;
+    typedef ULog_LogType LogType;
 
     // The offset by which the names of the given message types are listed in the logColours array below
     constexpr uint8_t logTypeOffset = 6;
@@ -83,17 +47,13 @@ namespace UVKLog
     public:
         LoggerInternal() noexcept;
         ~LoggerInternal() noexcept;
-    private:
-        friend class Logger;
-        friend class ImGuiConsole;
+
+        static LoggerInternal* getWithCreate() noexcept;
+        static LoggerInternal& get(LoggerInternal* lg = nullptr) noexcept;
 
         template<bool bFile, typename... args>
         void agnostic(const char* message, LogType type, args&&... argv) noexcept
         {
-            bool bError = false;
-            if (type == UVK_LOG_TYPE_ERROR && bUsingErrors)
-                bError = true;
-
             std::string output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
             std::stringstream ss;
             (ss << ... << argv);
@@ -106,9 +66,9 @@ namespace UVKLog
 
             messageLog.emplace_back(output, type);
 
-            if (bError)
+            if (type == ULOG_LOG_TYPE_ERROR && bUsingErrors)
             {
-#ifdef NO_INSTANT_CRASH
+#ifdef ULOG_NO_INSTANT_CRASH
                 std::cin.get();
 #endif
                 std::terminate();
@@ -121,13 +81,11 @@ namespace UVKLog
 
         std::vector<CommandType> commands;
 
-        LogOperations operationType = UVK_LOG_OPERATION_TERMINAL;
+        LogOperations operationType = ULOG_LOG_OPERATION_TERMINAL;
 
         static std::string getCurrentTime() noexcept;
         void shutdownFileStream() noexcept;
     };
-
-    inline LoggerInternal loggerInternal;
 
     /**
      * @brief Logs a message to the terminal, a file or both
@@ -160,15 +118,16 @@ namespace UVKLog
         template<typename... args>
         static void log(const char* message, LogType type, args&&... argv) noexcept
         {
-            if (loggerInternal.operationType == UVK_LOG_OPERATION_FILE_AND_TERMINAL)
+            auto& logger = LoggerInternal::get();
+            if (logger.operationType == ULOG_LOG_OPERATION_FILE_AND_TERMINAL)
             {
-                loggerInternal.agnostic<false>(message, type, argv...);
-                loggerInternal.agnostic<true>(message, type, argv...);
+                logger.agnostic<false>(message, type, argv...);
+                logger.agnostic<true>(message, type, argv...);
             }
-            else if (loggerInternal.operationType == UVK_LOG_OPERATION_TERMINAL)
-                loggerInternal.agnostic<false>(message, type, argv...);
+            else if (logger.operationType == ULOG_LOG_OPERATION_TERMINAL)
+                logger.agnostic<false>(message, type, argv...);
             else
-                loggerInternal.agnostic<true>(message, type, argv...);
+                logger.agnostic<true>(message, type, argv...);
         }
 
         // Specialization where we don't use the additional templated arguments, look at the log above for documentation
@@ -199,8 +158,6 @@ namespace UVKLog
         // UntitledImGuiFramework Event Safety - Any time
         ~Timer() noexcept;
     private:
-        double duration = 0;
-
-        std::chrono::time_point<std::chrono::high_resolution_clock> startPos;
+        ULog_Timer timer{};
     };
 }

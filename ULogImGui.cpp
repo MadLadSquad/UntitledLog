@@ -1,49 +1,50 @@
-#include "UVKLogImGui.h"
-#ifdef UVK_LOG_IMGUI
+#include "ULogImGui.hpp"
+#ifdef ULOG_IMGUI
 #include "cpp/imgui_stdlib.h"
 
-void UVKLog::ImGuiConsole::setLogColour(ImVec4 colour, LogType type) noexcept
+void ULog::ImGuiConsole::setLogColour(const ImVec4 colour, const LogType type) noexcept
 {
     switch (type)
     {
-    case UVK_LOG_TYPE_WARNING:
+    case ULOG_LOG_TYPE_WARNING:
         warning = colour;
         return;
-    case UVK_LOG_TYPE_ERROR:
+    case ULOG_LOG_TYPE_ERROR:
         error = colour;
         return;
-    case UVK_LOG_TYPE_NOTE:
+    case ULOG_LOG_TYPE_NOTE:
         note = colour;
         return;
-    case UVK_LOG_TYPE_SUCCESS:
+    case ULOG_LOG_TYPE_SUCCESS:
         success = colour;
         return;
-    case UVK_LOG_TYPE_MESSAGE:
+    case ULOG_LOG_TYPE_MESSAGE:
         message = colour;
         return;
     }
 }
 
-void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox) noexcept
+void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
 {
-    for (auto& a : loggerInternal.messageLog)
+    auto& logger = LoggerInternal::get();
+    for (const auto& a : logger.messageLog)
     {
         ImVec4 colour;
         switch (a.second)
         {
-        case UVK_LOG_TYPE_WARNING:
+        case ULOG_LOG_TYPE_WARNING:
             colour = warning;
             break;
-        case UVK_LOG_TYPE_ERROR:
+        case ULOG_LOG_TYPE_ERROR:
             colour = error;
             break;
-        case UVK_LOG_TYPE_NOTE:
+        case ULOG_LOG_TYPE_NOTE:
             colour = note;
             break;
-        case UVK_LOG_TYPE_SUCCESS:
+        case ULOG_LOG_TYPE_SUCCESS:
             colour = success;
             break;
-        case UVK_LOG_TYPE_MESSAGE:
+        case ULOG_LOG_TYPE_MESSAGE:
             colour = message;
             break;
         }
@@ -57,7 +58,7 @@ void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox) noexcept
     ImGui::SameLine();
     if (ImGui::Button("Send##consoleCommand"))
     {
-        for (auto& a : loggerInternal.commands)
+        for (const auto& a : logger.commands)
         {
             if (command.rfind(a.cmd, 0) == 0)
             {
@@ -71,25 +72,23 @@ void UVKLog::ImGuiConsole::display(bool* bInteractingWithTextbox) noexcept
         ImGui::SetScrollHereY(1.0f);
 }
 
-void UVKLog::ImGuiConsole::addToMessageLog(const std::string& msg, LogType type) noexcept
+void ULog::ImGuiConsole::addToMessageLog(const std::string& msg, LogType type) noexcept
 {
-    loggerInternal.messageLog.emplace_back(msg, type);
+    LoggerInternal::get().messageLog.emplace_back(msg, type);
 }
 
-void UVKLog::ImGuiConsole::addCommand(const CommandType& cmd) noexcept
+void ULog::ImGuiConsole::addCommand(const CommandType& cmd) noexcept
 {
-    loggerInternal.commands.emplace_back(cmd);
+    LoggerInternal::get().commands.emplace_back(cmd);
 }
 
-void UVKLog::ImGuiConsole::showHelpMessage(const std::string&) noexcept
+void ULog::ImGuiConsole::showHelpMessage(const std::string&) noexcept
 {
-    for (const auto& a : loggerInternal.commands)
-    {
-        addToMessageLog(std::string(a.cmd) + " - " + a.cmdHint, UVK_LOG_TYPE_MESSAGE);
-    }
+    for (const auto& a : LoggerInternal::get().commands)
+        addToMessageLog(std::string(a.cmd) + " - " + a.cmdHint, ULOG_LOG_TYPE_MESSAGE);
 }
 
-void UVKLog::ImGuiConsole::displayFull(bool& bOpen, bool* bInteractingWithTextbox) noexcept
+void ULog::ImGuiConsole::displayFull(bool& bOpen, bool* bInteractingWithTextbox) const noexcept
 {
     ImGui::Begin("Developer Console", &bOpen);
     display(bInteractingWithTextbox);

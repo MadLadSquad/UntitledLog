@@ -1,20 +1,19 @@
 #pragma once
-#include "UVKLog.h"
-#ifdef UVK_LOG_IMGUI
+#include "ULog.hpp"
+#ifdef ULOG_IMGUI
 #if __has_include(<imgui.h>)
 #include "imgui.h"
 
-namespace UVKLog
+namespace ULog
 {
     // UntitledImGuiFramework Event Safety - Any time
-    class UVK_PUBLIC_API ImGuiConsole
+    class MLS_PUBLIC_API ImGuiConsole
     {
     public:
         // UntitledImGuiFramework Event Safety - Any time
-        void displayFull(bool& bOpen, bool* bInteractingWithTextbox) noexcept;
+        void displayFull(bool& bOpen, bool* bInteractingWithTextbox) const noexcept;
         // UntitledImGuiFramework Event Safety - Any time
-        void display(bool* bInteractingWithTextbox) noexcept;
-
+        void display(bool* bInteractingWithTextbox) const noexcept;
 
         // UntitledImGuiFramework Event Safety - Any time
         static void addToMessageLog(const std::string& msg, LogType type) noexcept;
