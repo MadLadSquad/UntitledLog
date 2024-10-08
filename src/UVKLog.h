@@ -90,12 +90,11 @@ namespace UVKLog
         template<bool bFile, typename... args>
         void agnostic(const char* message, LogType type, args&&... argv) noexcept
         {
-            std::string output;
             bool bError = false;
             if (type == UVK_LOG_TYPE_ERROR && bUsingErrors)
                 bError = true;
 
-            output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
+            std::string output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
             std::stringstream ss;
             (ss << ... << argv);
             output += ss.str();
@@ -105,7 +104,7 @@ namespace UVKLog
             else
                 std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << std::endl;
 
-            messageLog.emplace_back(std::make_pair(output, type));
+            messageLog.emplace_back(output, type);
 
             if (bError)
             {

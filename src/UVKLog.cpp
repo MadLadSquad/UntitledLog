@@ -15,7 +15,7 @@ void UVKLog::Timer::start() noexcept
 
 void UVKLog::Timer::stop() noexcept
 {
-    auto endTime = std::chrono::high_resolution_clock::now();
+    const auto endTime = std::chrono::high_resolution_clock::now();
     duration = static_cast<double>(TIME_COUNT(endTime) - TIME_COUNT(startPos)) * 0.001;
 }
 
