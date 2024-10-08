@@ -24,7 +24,7 @@ void ULog_Logger_log(const ULog_LogType type, const char* fmt, ...)
     va_end(list);
 }
 
-static void printToFile(const std::string& output, const char* fmt, const va_list list) noexcept
+static void printToFile(const std::string& output, const char* fmt, va_list list) noexcept
 {
     auto& logger = ULog::LoggerInternal::get();
 
@@ -35,7 +35,7 @@ static void printToFile(const std::string& output, const char* fmt, const va_lis
     free(buffer);
 }
 
-static void printToConsole(const std::string& output, const ULog_LogType type, const char* fmt, const va_list list) noexcept
+static void printToConsole(const std::string& output, const ULog_LogType type, const char* fmt, va_list list) noexcept
 {
     printf("%s%s", ULog::logColours[type], output.c_str());
     vprintf(fmt, list);
