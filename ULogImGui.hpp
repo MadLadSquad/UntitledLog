@@ -11,9 +11,9 @@ namespace ULog
     {
     public:
         // UntitledImGuiFramework Event Safety - Any time
-        void displayFull(bool& bOpen, bool* bInteractingWithTextbox) const noexcept;
+        void displayFull(bool& bOpen, bool* bInteractingWithTextbox = nullptr) const noexcept;
         // UntitledImGuiFramework Event Safety - Any time
-        void display(bool* bInteractingWithTextbox) const noexcept;
+        void display(bool* bInteractingWithTextbox = nullptr) const noexcept;
 
         // UntitledImGuiFramework Event Safety - Any time
         static void addToMessageLog(const std::string& msg, LogType type) noexcept;

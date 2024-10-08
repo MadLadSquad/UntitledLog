@@ -24,27 +24,38 @@ void ULog_Logger_log(const ULog_LogType type, const char* fmt, ...)
     va_end(list);
 }
 
-void ULog_Logger_logV(const ULog_LogType type, const char* fmt, va_list va_list)
+static void printToFile(const std::string& output, const char* fmt, const va_list list) noexcept
+{
+    auto& logger = ULog::LoggerInternal::get();
+
+    logger.fileout << output;
+    char* buffer;
+    vasprintf(&buffer, fmt, list);
+    logger.fileout << buffer << std::endl;
+    free(buffer);
+}
+
+static void printToConsole(const std::string& output, const ULog_LogType type, const char* fmt, const va_list list) noexcept
+{
+    printf("%s%s", ULog::logColours[type], output.c_str());
+    vprintf(fmt, list);
+    printf("%s", ULog::logColours[ULog::logTypeOffset - 1]);
+}
+
+void ULog_Logger_logV(const ULog_LogType type, const char* fmt, const va_list list)
 {
     auto& logger = ULog::LoggerInternal::get();
     const std::string output = "[" + ULog::LoggerInternal::getCurrentTime() + "] " + ULog::logColours[type + ULog::logTypeOffset] + ": ";
 
     if (logger.operationType == ULOG_LOG_OPERATION_FILE_AND_TERMINAL)
     {
-        logger.fileout << output << std::endl;
-
-        printf("%s%s", ULog::logColours[type], output.c_str());
-        vprintf(fmt, va_list);
-        printf("%s", ULog::logColours[ULog::logTypeOffset - 1]);
+        printToFile(output, fmt, list);
+        printToConsole(output, type, fmt, list);
     }
     else if (logger.operationType == ULOG_LOG_OPERATION_FILE)
-        logger.fileout << output << std::endl;
+        printToFile(output, fmt, list);
     else
-    {
-        printf("%s%s", ULog::logColours[type], output.c_str());
-        vprintf(fmt, va_list);
-        printf("%s", ULog::logColours[ULog::logTypeOffset - 1]);
-    }
+        printToConsole(output, type, fmt, list);
 
     logger.messageLog.emplace_back(output, type);
     if (type == ULOG_LOG_TYPE_ERROR && logger.bUsingErrors)
@@ -54,7 +65,6 @@ void ULog_Logger_logV(const ULog_LogType type, const char* fmt, va_list va_list)
 #endif
         std::terminate();
     }
-
 }
 
 void ULog_Timer_start(ULog_Timer* timer)
