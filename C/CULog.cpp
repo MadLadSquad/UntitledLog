@@ -42,7 +42,7 @@ static void printToConsole(const std::string& output, const ULog_LogType type, c
     printf("%s", ULog::logColours[ULog::logTypeOffset - 1]);
 }
 
-void ULog_Logger_logV(const ULog_LogType type, const char* fmt, const va_list list)
+void ULog_Logger_logV(const ULog_LogType type, const char* fmt, va_list list)
 {
     auto& logger = ULog::LoggerInternal::get();
     const std::string output = "[" + ULog::LoggerInternal::getCurrentTime() + "] " + ULog::logColours[type + ULog::logTypeOffset] + ": ";
