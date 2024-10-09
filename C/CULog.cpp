@@ -26,7 +26,7 @@ void ULog_Logger_log(const ULog_LogType type, const char* fmt, ...)
 
 #ifdef _WIN32
 // Copied from https://stackoverflow.com/questions/40159892/using-asprintf-on-windows
-static int vasprintf(char **strp, const char *fmt, va_list ap)
+int vasprintf(char **strp, const char *fmt, va_list ap)
 {
     // _vscprintf tells you how big the buffer needs to be
     int len = _vscprintf(fmt, ap);

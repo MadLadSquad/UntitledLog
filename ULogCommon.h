@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <inttypes.h>
+#include <stdio.h>
 #include <stdarg.h>
 
 #ifdef __cplusplus
