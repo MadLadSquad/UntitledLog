@@ -26,27 +26,29 @@ void ULog_Logger_log(const ULog_LogType type, const char* fmt, ...)
 }
 
 #ifdef _WIN32
-// Copied from https://stackoverflow.com/questions/40159892/using-asprintf-on-windows
-int vasprintf(char **strp, const char *fmt, va_list ap)
+int vasprintf(char** strp, const char* fmt, va_list ap)
 {
-    // _vscprintf tells you how big the buffer needs to be
+    // Determine the length of the formatted string
     int len = _vscprintf(fmt, ap);
     if (len == -1) {
         return -1;
     }
-    size_t size = (size_t)len + 1;
-    char* str = (char*)malloc(size);
-    if (!str) {
+
+    // Allocate memory for the formatted string (+1 for null-terminator)
+    *strp = static_cast<char*>(malloc(static_cast<size_t>(len) + 1));
+    if (!*strp) {
         return -1;
     }
-    // _vsprintf_s is the "secure" version of vsprintf
-    int r = _vsprintf_s(str, len + 1, fmt, ap);
-    if (r == -1) {
-        free(str);
+
+    // Format the string and store it in the allocated buffer
+    int result = vsnprintf(*strp, static_cast<size_t>(len) + 1, fmt, ap);
+    if (result == -1) {
+        free(*strp);
+        *strp = nullptr;
         return -1;
     }
-    *strp = str;
-    return r;
+
+    return result; // Return the number of characters written (excluding null-terminator)
 }
 #endif
 
