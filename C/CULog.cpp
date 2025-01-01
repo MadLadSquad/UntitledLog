@@ -73,6 +73,8 @@ static void printToConsole(const std::string& output, const ULog_LogType type, c
 void ULog_Logger_logV(const ULog_LogType type, const char* fmt, va_list list)
 {
     auto& logger = ULog::LoggerInternal::get();
+    if (!logger.bLoggingEnabled)
+        return;
     const std::string output = "[" + ULog::LoggerInternal::getCurrentTime() + "] " + ULog::logColours[type + ULog::logTypeOffset] + ": ";
 
     if (logger.operationType == ULOG_LOG_OPERATION_FILE_AND_TERMINAL)
