@@ -54,6 +54,8 @@ namespace ULog
         template<bool bFile, typename... args>
         void agnostic(const char* message, LogType type, args&&... argv) noexcept
         {
+            if (!bLoggingEnabled)
+                return;
             std::string output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
             std::stringstream ss;
             (ss << ... << argv);
@@ -77,6 +79,7 @@ namespace ULog
 
         std::ofstream fileout;
         bool bUsingErrors = false;
+        bool bLoggingEnabled = true;
         std::vector<std::pair<std::string, LogType>> messageLog;
 
         std::vector<CommandType> commands;
@@ -97,6 +100,10 @@ namespace ULog
         // If set to true calling log with the UVK_LOG_TYPE_ERROR will terminate the application
         // UntitledImGuiFramework Event Safety - Any time
         static void setCrashOnError(bool bError) noexcept;
+
+        // If set to false, calling any log function will not produce any output
+        // UntitledImGuiFramework Event Safety - Any time
+        static void setEnableLogging(bool bEnable) noexcept;
 
         // Sets the current file to which we should log to if logging to files is enabled
         // UntitledImGuiFramework Event Safety - Any time

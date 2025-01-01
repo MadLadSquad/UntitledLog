@@ -41,6 +41,11 @@ void ULog::Logger::setCrashOnError(const bool bError) noexcept
     LoggerInternal::get().bUsingErrors = bError;
 }
 
+void ULog::Logger::setEnableLogging(const bool bEnable) noexcept
+{
+    LoggerInternal::get().bLoggingEnabled = bEnable;
+}
+
 void ULog::Logger::setCurrentLogFile(const char* file) noexcept
 {
     LoggerInternal::get().shutdownFileStream();
