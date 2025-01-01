@@ -7,6 +7,12 @@ void ULog_Logger_setCrashOnError(const bool bError)
     ULog::Logger::setCrashOnError(bError);
 }
 
+
+void ULog_Logger_setEnableLogging(bool bEnable)
+{
+    ULog::Logger::setEnableLogging(bEnable);
+}
+
 void ULog_Logger_setCurrentLogFile(const char* file)
 {
     ULog::Logger::setCurrentLogFile(file);

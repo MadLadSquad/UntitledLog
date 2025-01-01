@@ -6,6 +6,7 @@ extern "C"
 #endif
 
     MLS_PUBLIC_API void ULog_Logger_setCrashOnError(bool bError);
+    MLS_PUBLIC_API void ULog_Logger_setEnableLogging(bool bEnable);
     MLS_PUBLIC_API void ULog_Logger_setCurrentLogFile(const char* file);
     MLS_PUBLIC_API void ULog_Logger_setLogOperations(ULog_LogOperations op);
     MLS_PUBLIC_API void ULog_Logger_log(ULog_LogType type, const char* fmt, ...);
