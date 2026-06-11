@@ -36,7 +36,7 @@ extern "C"
     MLS_PUBLIC_API void ULog_ImGuiConsole_display(ULog_CImGuiConsole* self, bool* bInteractingWithTextbox);
 
     // UntitledImGuiFramework Event Safety - Any time
-    MLS_PUBLIC_API void ULog_addMessageToLow(const char* message, ULog_LogType type);
+    MLS_PUBLIC_API void ULog_addMessageToLog(const char* message, ULog_LogType type);
     // UntitledImGuiFramework Event Safety - Any time
     MLS_PUBLIC_API void ULog_addCommand(const char* cmd, const char* cmdHint, ULog_ImGuiConsole_CommandFunc func);
 

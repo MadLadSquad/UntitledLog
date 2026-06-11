@@ -21,7 +21,7 @@ void ULog_ImGuiConsole_display(ULog_CImGuiConsole* self, bool* bInteractingWithT
     CONCAST(self)->display(bInteractingWithTextbox);
 }
 
-void ULog_addMessageToLow(const char* message, const ULog_LogType type)
+void ULog_addMessageToLog(const char* message, const ULog_LogType type)
 {
     ULog::ImGuiConsole::addToMessageLog(message, type);
 }
