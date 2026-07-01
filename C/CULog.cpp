@@ -23,6 +23,11 @@ void ULog_Logger_setLogOperations(const ULog_LogOperations op)
     ULog::Logger::setLogOperation(op);
 }
 
+void ULog_Logger_setMaxLogMessages(const size_t max)
+{
+    ULog::Logger::setMaxLogMessages(max);
+}
+
 void ULog_Logger_log(const ULog_LogType type, const char* fmt, ...)
 {
     va_list list;
@@ -58,22 +63,14 @@ int vasprintf(char** strp, const char* fmt, va_list ap)
 }
 #endif
 
-static void printToFile(const std::string& output, const char* fmt, va_list list) noexcept
+static void printToFile(const std::string& output) noexcept
 {
-    auto& logger = ULog::LoggerInternal::get();
-
-    logger.fileout << output;
-    char* buffer;
-    vasprintf(&buffer, fmt, list);
-    logger.fileout << buffer << std::endl;
-    free(buffer);
+    ULog::LoggerInternal::get().fileout << output << std::endl;
 }
 
-static void printToConsole(const std::string& output, const ULog_LogType type, const char* fmt, va_list list) noexcept
+static void printToConsole(const std::string& output, const ULog_LogType type) noexcept
 {
-    printf("%s%s", ULog::logColours[type], output.c_str());
-    vprintf(fmt, list);
-    printf("%s", ULog::logColours[ULog::logTypeOffset - 1]);
+    printf("%s%s%s\n", ULog::logColours[type], output.c_str(), ULog::logColours[ULog::logTypeOffset - 1]);
 }
 
 void ULog_Logger_logV(const ULog_LogType type, const char* fmt, va_list list)
@@ -81,20 +78,32 @@ void ULog_Logger_logV(const ULog_LogType type, const char* fmt, va_list list)
     auto& logger = ULog::LoggerInternal::get();
     if (!logger.bLoggingEnabled)
         return;
-    const std::string output = "[" + ULog::LoggerInternal::getCurrentTime() + "] " + ULog::logColours[type + ULog::logTypeOffset] + ": ";
+    // Guard against an out-of-range type indexing logColours out of bounds
+    const ULog_LogType safeType = ULog::sanitizeLogType(type);
+    std::string output = "[" + ULog::LoggerInternal::getCurrentTime() + "] " + ULog::logColours[safeType + ULog::logTypeOffset] + ": ";
+
+    // Format the variadic message exactly once and append it to the header. This keeps the full message inside
+    // "output" (so it makes it into messageLog for the ImGui console) and avoids consuming "list" more than once,
+    // which would be undefined behaviour.
+    char* buffer = nullptr;
+    if (vasprintf(&buffer, fmt, list) != -1 && buffer != nullptr)
+    {
+        output += buffer;
+        free(buffer);
+    }
 
     if (logger.operationType == ULOG_LOG_OPERATION_FILE_AND_TERMINAL)
     {
-        printToFile(output, fmt, list);
-        printToConsole(output, type, fmt, list);
+        printToFile(output);
+        printToConsole(output, safeType);
     }
     else if (logger.operationType == ULOG_LOG_OPERATION_FILE)
-        printToFile(output, fmt, list);
+        printToFile(output);
     else
-        printToConsole(output, type, fmt, list);
+        printToConsole(output, safeType);
 
-    logger.messageLog.emplace_back(output, type);
-    if (type == ULOG_LOG_TYPE_ERROR && logger.bUsingErrors)
+    logger.pushMessage(output, safeType);
+    if (safeType == ULOG_LOG_TYPE_ERROR && logger.bUsingErrors)
     {
 #ifdef ULOG_NO_INSTANT_CRASH
         std::cin.get();

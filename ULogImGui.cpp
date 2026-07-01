@@ -27,9 +27,12 @@ void ULog::ImGuiConsole::setLogColour(const ImVec4 colour, const LogType type) n
 void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
 {
     auto& logger = LoggerInternal::get();
+
+    // Scope every widget ID below to this console instance so multiple consoles don't collide on the input box/button
+    ImGui::PushID(this);
     for (const auto& a : logger.messageLog)
     {
-        ImVec4 colour;
+        ImVec4 colour = message;
         switch (a.second)
         {
         case ULOG_LOG_TYPE_WARNING:
@@ -52,7 +55,7 @@ void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
         ImGui::TextColored(colour, "%s", a.first.c_str());
     }
 
-    static std::string command;
+    std::string& command = logger.consoleCommand;
     if ((ImGui::InputTextWithHint("##Input", "Enter any command here", &command) || ImGui::IsItemActive()) && bInteractingWithTextbox != nullptr)
         *bInteractingWithTextbox = true;
     ImGui::SameLine();
@@ -70,11 +73,12 @@ void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
     }
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
+    ImGui::PopID();
 }
 
 void ULog::ImGuiConsole::addToMessageLog(const std::string& msg, LogType type) noexcept
 {
-    LoggerInternal::get().messageLog.emplace_back(msg, type);
+    LoggerInternal::get().pushMessage(msg, type);
 }
 
 void ULog::ImGuiConsole::addCommand(const CommandType& cmd) noexcept

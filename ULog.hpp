@@ -35,6 +35,14 @@ namespace ULog
         "Null"
     };
 
+    // Clamps a possibly out-of-range LogType to a valid value so it can never index logColours out of bounds.
+    // Valid types are numerically [ULOG_LOG_TYPE_SUCCESS(0), ULOG_LOG_TYPE_NOTE(4)].
+    constexpr LogType sanitizeLogType(LogType type) noexcept
+    {
+        return (static_cast<int>(type) < ULOG_LOG_TYPE_SUCCESS || static_cast<int>(type) > ULOG_LOG_TYPE_NOTE)
+                   ? ULOG_LOG_TYPE_MESSAGE : type;
+    }
+
     struct MLS_PUBLIC_API CommandType
     {
         std::string cmd; // the name of the command;
@@ -51,11 +59,12 @@ namespace ULog
         static LoggerInternal* getWithCreate() noexcept;
         static LoggerInternal& get(LoggerInternal* lg = nullptr) noexcept;
 
-        template<bool bFile, typename... args>
+        template<bool bFile, bool bRecord, typename... args>
         void agnostic(const char* message, LogType type, args&&... argv) noexcept
         {
             if (!bLoggingEnabled)
                 return;
+            type = sanitizeLogType(type);
             std::string output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
             std::stringstream ss;
             (ss << ... << argv);
@@ -66,7 +75,10 @@ namespace ULog
             else
                 std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << std::endl;
 
-            messageLog.emplace_back(output, type);
+            // Only record to the message log once per logged line. In FILE_AND_TERMINAL mode agnostic() runs twice
+            // (once per stream), so the caller records on exactly one of those calls to avoid duplicate entries.
+            if constexpr (bRecord)
+                pushMessage(output, type);
 
             if (type == ULOG_LOG_TYPE_ERROR && bUsingErrors)
             {
@@ -82,12 +94,26 @@ namespace ULog
         bool bLoggingEnabled = true;
         std::vector<std::pair<std::string, LogType>> messageLog;
 
+        // Maximum number of entries kept in messageLog. When exceeded, the oldest entries are dropped. A value of 0
+        // disables the limit (unbounded growth). Defaults to 1000.
+        size_t maxLogMessages = 1000;
+
         std::vector<CommandType> commands;
+
+        // Backing storage for the ImGui console's command input box. Lives on the singleton (not as a member of
+        // ImGuiConsole) because ImGuiConsole must stay layout-compatible with the C struct ULog_CImGuiConsole.
+        std::string consoleCommand;
 
         LogOperations operationType = ULOG_LOG_OPERATION_TERMINAL;
 
         static std::string getCurrentTime() noexcept;
         void shutdownFileStream() noexcept;
+
+        // Appends an entry to messageLog and trims the oldest entries so the log never exceeds maxLogMessages
+        void pushMessage(const std::string& msg, LogType type) noexcept;
+
+        // Drops the oldest entries so messageLog holds at most maxLogMessages entries (no-op when the limit is 0)
+        void trimMessageLog() noexcept;
     };
 
     /**
@@ -113,6 +139,11 @@ namespace ULog
         // UntitledImGuiFramework Event Safety - Any time
         static void setLogOperation(LogOperations op) noexcept;
 
+        // Sets the maximum number of messages retained in the in-memory log (used by the ImGui console). When the log
+        // grows past this limit, the oldest messages are dropped. Passing 0 disables the limit. Defaults to 1000.
+        // UntitledImGuiFramework Event Safety - Any time
+        static void setMaxLogMessages(size_t max) noexcept;
+
         /**
          * @brief Logs a message and a templated variadic list of arguments to a stream depending on the current log
          * operation
@@ -128,13 +159,14 @@ namespace ULog
             auto& logger = LoggerInternal::get();
             if (logger.operationType == ULOG_LOG_OPERATION_FILE_AND_TERMINAL)
             {
-                logger.agnostic<false>(message, type, argv...);
-                logger.agnostic<true>(message, type, argv...);
+                // Record on the terminal call; the file call must not record again (would duplicate the entry)
+                logger.agnostic<false, true>(message, type, argv...);
+                logger.agnostic<true, false>(message, type, argv...);
             }
             else if (logger.operationType == ULOG_LOG_OPERATION_TERMINAL)
-                logger.agnostic<false>(message, type, argv...);
+                logger.agnostic<false, true>(message, type, argv...);
             else
-                logger.agnostic<true>(message, type, argv...);
+                logger.agnostic<true, true>(message, type, argv...);
         }
 
         // Specialization where we don't use the additional templated arguments, look at the log above for documentation

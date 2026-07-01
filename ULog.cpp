@@ -57,6 +57,14 @@ void ULog::Logger::setLogOperation(const LogOperations op) noexcept
     LoggerInternal::get().operationType = op;
 }
 
+void ULog::Logger::setMaxLogMessages(const size_t max) noexcept
+{
+    auto& logger = LoggerInternal::get();
+    logger.maxLogMessages = max;
+    // Apply the new limit immediately to any already-recorded messages
+    logger.trimMessageLog();
+}
+
 void ULog::Logger::log(const char* message, const LogType type) noexcept
 {
     log(message, type, "");
@@ -66,15 +74,42 @@ std::string ULog::LoggerInternal::getCurrentTime() noexcept
 {
     const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
-    std::string realTime = std::ctime(&now);
-    realTime.erase(24);
+    // Use the thread-safe, reentrant conversion instead of std::ctime, which writes to a shared static buffer and
+    // can return nullptr on failure (constructing a std::string from which is undefined behaviour).
+    std::tm timeInfo{};
+#ifdef _WIN32
+    if (localtime_s(&timeInfo, &now) != 0)
+        return {};
+#else
+    if (localtime_r(&now, &timeInfo) == nullptr)
+        return {};
+#endif
 
-    return realTime;
+    // "%a %b %e %H:%M:%S %Y" reproduces std::ctime's "Www Mmm dd hh:mm:ss yyyy" layout without the trailing newline.
+    char buffer[64] = {};
+    if (std::strftime(buffer, sizeof(buffer), "%a %b %e %H:%M:%S %Y", &timeInfo) == 0)
+        return {};
+
+    return buffer;
 }
 
 void ULog::LoggerInternal::shutdownFileStream() noexcept
 {
     fileout.close();
+}
+
+void ULog::LoggerInternal::pushMessage(const std::string& msg, const LogType type) noexcept
+{
+    messageLog.emplace_back(msg, type);
+    trimMessageLog();
+}
+
+void ULog::LoggerInternal::trimMessageLog() noexcept
+{
+    // A limit of 0 means "unbounded"
+    if (maxLogMessages == 0 || messageLog.size() <= maxLogMessages)
+        return;
+    messageLog.erase(messageLog.begin(), messageLog.begin() + static_cast<std::ptrdiff_t>(messageLog.size() - maxLogMessages));
 }
 
 ULog::LoggerInternal::LoggerInternal() noexcept
