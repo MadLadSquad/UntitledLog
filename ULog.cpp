@@ -1,34 +1,32 @@
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+    #define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "ULog.hpp"
 #include <ctime>
 #include "ULogImGui.hpp"
-
-#if _MSC_VER && !__INTEL_COMPILER
-    #define _CRT_SECURE_NO_WARNINGS
-#endif
 
 #define TIME_COUNT(x) std::chrono::time_point_cast<std::chrono::microseconds>(x).time_since_epoch().count()
 
 void ULog::Timer::start() noexcept
 {
+    // Store the start timestamp as a whole microsecond count. A double represents integers exactly up to 2^53, which
+    // covers ~285 years of microseconds, so no precision is lost - and this avoids type-punning a chrono::time_point
+    // through the double field that the C ABI (ULog_Timer) forces us to use.
     const auto tmp = std::chrono::high_resolution_clock::now();
-    // scary pointer bullshit because of the C API
-    timer.startPos = *static_cast<const double* const>(static_cast<const void* const>(&tmp));
+    timer.startPos = static_cast<double>(TIME_COUNT(tmp));
 }
 
 void ULog::Timer::stop() noexcept
 {
     const auto endTime = std::chrono::high_resolution_clock::now();
-    timer.duration = static_cast<double>(TIME_COUNT(endTime) - TIME_COUNT(
-        // scary pointer bullshit because of the C API
-        *static_cast<const std::chrono::time_point<std::chrono::high_resolution_clock>* const>(
-            static_cast<const void* const>(&timer.startPos)
-        )
-    )) * 0.001;
+    timer.duration = (static_cast<double>(TIME_COUNT(endTime)) - timer.startPos) * 0.001;
 }
 
 ULog::Timer::~Timer() noexcept
 {
-    stop();
+    // Intentionally does not call stop(): the duration is unobservable once the Timer is destroyed, and calling stop()
+    // here would clobber a value the user may have deliberately frozen with an explicit stop().
 }
 
 double ULog::Timer::get() const noexcept
@@ -48,8 +46,24 @@ void ULog::Logger::setEnableLogging(const bool bEnable) noexcept
 
 void ULog::Logger::setCurrentLogFile(const char* file) noexcept
 {
-    LoggerInternal::get().shutdownFileStream();
-    LoggerInternal::get().fileout = std::ofstream(file);
+    auto& logger = LoggerInternal::get();
+    logger.shutdownFileStream();
+
+    // Constructing an std::ofstream from a null path is undefined behaviour (it reaches fopen(nullptr)), so bail out
+    // before touching the stream. This is reachable from the C API, which forwards the pointer verbatim.
+    if (file == nullptr)
+    {
+        Logger::log("failed to open log file '", ULOG_LOG_TYPE_WARNING, "(null)",
+                    "'; file logging will be discarded until a valid file is set");
+        return;
+    }
+
+    logger.fileout = std::ofstream(file);
+    // A failed open leaves the stream in a bad state where every subsequent write is silently discarded, so warn
+    // instead of letting FILE-mode logging vanish without a trace.
+    if (!logger.fileout.is_open())
+        Logger::log("failed to open log file '", ULOG_LOG_TYPE_WARNING, file,
+                    "'; file logging will be discarded until a valid file is set");
 }
 
 void ULog::Logger::setLogOperation(const LogOperations op) noexcept
@@ -98,9 +112,29 @@ void ULog::LoggerInternal::shutdownFileStream() noexcept
     fileout.close();
 }
 
-void ULog::LoggerInternal::pushMessage(const std::string& msg, const LogType type) noexcept
+void ULog::LoggerInternal::pushMessage(std::string msg, const LogType type) noexcept
 {
-    messageLog.emplace_back(msg, type);
+    // The ImGui console renders messageLog through an ImGuiListClipper, which assumes every entry is exactly one row
+    // tall. A message with embedded newlines would violate that and corrupt scrolling, so split it into one entry per
+    // physical line here. Only the first line keeps the "[time] Type:" prefix; continuation lines are stored bare.
+    // Note: because entries are now lines, maxLogMessages bounds physical lines rather than log calls.
+    const size_t firstNewline = msg.find('\n');
+    if (firstNewline == std::string::npos)
+    {
+        // Common case: single-line message, move it straight in with no copy.
+        messageLog.emplace_back(std::move(msg), type);
+        trimMessageLog();
+        return;
+    }
+
+    size_t start = 0;
+    for (size_t nl = firstNewline; nl != std::string::npos; nl = msg.find('\n', start))
+    {
+        messageLog.emplace_back(msg.substr(start, nl - start), type);
+        start = nl + 1;
+    }
+    // Trailing segment after the last newline (empty if the message ended with '\n').
+    messageLog.emplace_back(msg.substr(start), type);
     trimMessageLog();
 }
 
@@ -110,6 +144,18 @@ void ULog::LoggerInternal::trimMessageLog() noexcept
     if (maxLogMessages == 0 || messageLog.size() <= maxLogMessages)
         return;
     messageLog.erase(messageLog.begin(), messageLog.begin() + static_cast<std::ptrdiff_t>(messageLog.size() - maxLogMessages));
+}
+
+void ULog::LoggerInternal::handleError(const LogType type) noexcept
+{
+    // Mirror agnostic()'s early-out: when logging is disabled we produce no output at all, so we must not terminate
+    // either - otherwise a disabled logger would crash the app on an error with nothing written anywhere.
+    if (!bLoggingEnabled || type != ULOG_LOG_TYPE_ERROR || !bUsingErrors)
+        return;
+#ifdef ULOG_NO_INSTANT_CRASH
+    std::cin.get();
+#endif
+    std::terminate();
 }
 
 ULog::LoggerInternal::LoggerInternal() noexcept

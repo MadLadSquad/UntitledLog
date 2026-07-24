@@ -3,6 +3,7 @@
 #include <fstream>
 #include <chrono>
 #include <vector>
+#include <deque>
 #include <functional>
 #include <sstream>
 #include <exception>
@@ -59,40 +60,35 @@ namespace ULog
         static LoggerInternal* getWithCreate() noexcept;
         static LoggerInternal& get(LoggerInternal* lg = nullptr) noexcept;
 
-        template<bool bFile, bool bRecord, typename... args>
+        template<bool bTerminal, bool bFile, typename... args>
         void agnostic(const char* message, LogType type, args&&... argv) noexcept
         {
             if (!bLoggingEnabled)
                 return;
             type = sanitizeLogType(type);
+            // Constructing an std::string from a null const char* is undefined behaviour; substitute a placeholder so a
+            // null message (reachable from callers that forward user-supplied pointers) can never trip that.
+            if (message == nullptr)
+                message = "(null)";
             std::string output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
             std::stringstream ss;
             (ss << ... << argv);
             output += ss.str();
 
+            // Build the line once and fan it out to whichever streams are enabled. FILE_AND_TERMINAL therefore emits a
+            // single timestamp/format pass shared by both streams instead of formatting the message twice.
+            if constexpr (bTerminal)
+                std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << std::endl;
             if constexpr (bFile)
                 fileout << output << std::endl;
-            else
-                std::cout << logColours[type] << output << logColours[logTypeOffset - 1] << std::endl;
 
-            // Only record to the message log once per logged line. In FILE_AND_TERMINAL mode agnostic() runs twice
-            // (once per stream), so the caller records on exactly one of those calls to avoid duplicate entries.
-            if constexpr (bRecord)
-                pushMessage(output, type);
-
-            if (type == ULOG_LOG_TYPE_ERROR && bUsingErrors)
-            {
-#ifdef ULOG_NO_INSTANT_CRASH
-                std::cin.get();
-#endif
-                std::terminate();
-            }
+            pushMessage(std::move(output), type);
         }
 
         std::ofstream fileout;
         bool bUsingErrors = false;
         bool bLoggingEnabled = true;
-        std::vector<std::pair<std::string, LogType>> messageLog;
+        std::deque<std::pair<std::string, LogType>> messageLog;
 
         // Maximum number of entries kept in messageLog. When exceeded, the oldest entries are dropped. A value of 0
         // disables the limit (unbounded growth). Defaults to 1000.
@@ -109,11 +105,18 @@ namespace ULog
         static std::string getCurrentTime() noexcept;
         void shutdownFileStream() noexcept;
 
-        // Appends an entry to messageLog and trims the oldest entries so the log never exceeds maxLogMessages
-        void pushMessage(const std::string& msg, LogType type) noexcept;
+        // Records a message in messageLog and trims the oldest entries so the log never exceeds maxLogMessages. A
+        // message containing embedded newlines is split into one entry per physical line (so the ImGui console's
+        // ImGuiListClipper sees uniform-height rows). Takes the message by value so single-line callers that are done
+        // with their buffer can std::move it straight into the log.
+        void pushMessage(std::string msg, LogType type) noexcept;
 
         // Drops the oldest entries so messageLog holds at most maxLogMessages entries (no-op when the limit is 0)
         void trimMessageLog() noexcept;
+
+        // Terminates the application if the given type is a fatal error and crash-on-error is enabled. Kept separate
+        // from agnostic() so that in FILE_AND_TERMINAL mode both streams are written before we terminate.
+        void handleError(LogType type) noexcept;
     };
 
     /**
@@ -139,8 +142,9 @@ namespace ULog
         // UntitledImGuiFramework Event Safety - Any time
         static void setLogOperation(LogOperations op) noexcept;
 
-        // Sets the maximum number of messages retained in the in-memory log (used by the ImGui console). When the log
-        // grows past this limit, the oldest messages are dropped. Passing 0 disables the limit. Defaults to 1000.
+        // Sets the maximum number of lines retained in the in-memory log (used by the ImGui console). Multi-line
+        // messages are stored one entry per physical line, so this limit counts lines, not log calls. When the log
+        // grows past this limit, the oldest lines are dropped. Passing 0 disables the limit. Defaults to 1000.
         // UntitledImGuiFramework Event Safety - Any time
         static void setMaxLogMessages(size_t max) noexcept;
 
@@ -157,16 +161,17 @@ namespace ULog
         static void log(const char* message, LogType type, args&&... argv) noexcept
         {
             auto& logger = LoggerInternal::get();
+            // A single agnostic() call formats the message once and writes it to every enabled stream, so the file and
+            // terminal lines always share one timestamp and the entry is recorded exactly once. Both streams are
+            // written before handleError() below so a fatal error still makes it into the file.
             if (logger.operationType == ULOG_LOG_OPERATION_FILE_AND_TERMINAL)
-            {
-                // Record on the terminal call; the file call must not record again (would duplicate the entry)
-                logger.agnostic<false, true>(message, type, argv...);
-                logger.agnostic<true, false>(message, type, argv...);
-            }
-            else if (logger.operationType == ULOG_LOG_OPERATION_TERMINAL)
-                logger.agnostic<false, true>(message, type, argv...);
-            else
                 logger.agnostic<true, true>(message, type, argv...);
+            else if (logger.operationType == ULOG_LOG_OPERATION_TERMINAL)
+                logger.agnostic<true, false>(message, type, argv...);
+            else
+                logger.agnostic<false, true>(message, type, argv...);
+
+            logger.handleError(type);
         }
 
         // Specialization where we don't use the additional templated arguments, look at the log above for documentation
@@ -191,7 +196,7 @@ namespace ULog
         // UntitledImGuiFramework Event Safety - Any time
         void stop() noexcept;
 
-        // Returns the duration time between starting the timer and the last
+        // Returns the duration, in milliseconds, between the last start() and stop() calls
         // UntitledImGuiFramework Event Safety - Any time
         [[nodiscard]] double get() const noexcept;
         // UntitledImGuiFramework Event Safety - Any time
