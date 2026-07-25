@@ -36,3 +36,6 @@ main.cpp
 cmake-build-*/
 CMakeLists.txt
 build/
+graphify-out/
+.agents/
+.claude/
