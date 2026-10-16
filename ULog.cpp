@@ -4,6 +4,7 @@
 
 #include "ULog.hpp"
 #include <ctime>
+#include <exception>
 #include "ULogImGui.hpp"
 
 #define TIME_COUNT(x) std::chrono::time_point_cast<std::chrono::microseconds>(x).time_since_epoch().count()
@@ -21,12 +22,6 @@ void ULog::Timer::stop() noexcept
 {
     const auto endTime = std::chrono::high_resolution_clock::now();
     timer.duration = (static_cast<double>(TIME_COUNT(endTime)) - timer.startPos) * 0.001;
-}
-
-ULog::Timer::~Timer() noexcept
-{
-    // Intentionally does not call stop(): the duration is unobservable once the Timer is destroyed, and calling stop()
-    // here would clobber a value the user may have deliberately frozen with an explicit stop().
 }
 
 double ULog::Timer::get() const noexcept
@@ -146,7 +141,7 @@ void ULog::LoggerInternal::trimMessageLog() noexcept
     messageLog.erase(messageLog.begin(), messageLog.begin() + static_cast<std::ptrdiff_t>(messageLog.size() - maxLogMessages));
 }
 
-void ULog::LoggerInternal::handleError(const LogType type) noexcept
+void ULog::LoggerInternal::handleError(const LogType type) const noexcept
 {
     // Mirror agnostic()'s early-out: when logging is disabled we produce no output at all, so we must not terminate
     // either - otherwise a disabled logger would crash the app on an error with nothing written anywhere.

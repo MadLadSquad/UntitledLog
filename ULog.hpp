@@ -6,7 +6,6 @@
 #include <deque>
 #include <functional>
 #include <sstream>
-#include <exception>
 #include "ULogCommon.h"
 
 namespace ULog
@@ -38,10 +37,9 @@ namespace ULog
 
     // Clamps a possibly out-of-range LogType to a valid value so it can never index logColours out of bounds.
     // Valid types are numerically [ULOG_LOG_TYPE_SUCCESS(0), ULOG_LOG_TYPE_NOTE(4)].
-    constexpr LogType sanitizeLogType(LogType type) noexcept
+    constexpr LogType sanitizeLogType(const LogType type) noexcept
     {
-        return (static_cast<int>(type) < ULOG_LOG_TYPE_SUCCESS || static_cast<int>(type) > ULOG_LOG_TYPE_NOTE)
-                   ? ULOG_LOG_TYPE_MESSAGE : type;
+        return (static_cast<int>(type) < ULOG_LOG_TYPE_SUCCESS || static_cast<int>(type) > ULOG_LOG_TYPE_NOTE) ? ULOG_LOG_TYPE_MESSAGE : type;
     }
 
     struct MLS_PUBLIC_API CommandType
@@ -65,11 +63,14 @@ namespace ULog
         {
             if (!bLoggingEnabled)
                 return;
+
             type = sanitizeLogType(type);
+
             // Constructing an std::string from a null const char* is undefined behaviour; substitute a placeholder so a
             // null message (reachable from callers that forward user-supplied pointers) can never trip that.
             if (message == nullptr)
                 message = "(null)";
+
             std::string output = "[" + getCurrentTime() + "] " + logColours[type + logTypeOffset] + ": " + message;
             std::stringstream ss;
             (ss << ... << argv);
@@ -116,7 +117,7 @@ namespace ULog
 
         // Terminates the application if the given type is a fatal error and crash-on-error is enabled. Kept separate
         // from agnostic() so that in FILE_AND_TERMINAL mode both streams are written before we terminate.
-        void handleError(LogType type) noexcept;
+        void handleError(LogType type) const noexcept;
     };
 
     /**
@@ -200,7 +201,7 @@ namespace ULog
         // UntitledImGuiFramework Event Safety - Any time
         [[nodiscard]] double get() const noexcept;
         // UntitledImGuiFramework Event Safety - Any time
-        ~Timer() noexcept;
+        ~Timer() noexcept = default;
     private:
         ULog_Timer timer{};
     };

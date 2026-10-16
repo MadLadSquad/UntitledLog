@@ -30,6 +30,7 @@ void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
 
     // Scope every widget ID below to this console instance so multiple consoles don't collide on the input box/button
     ImGui::PushID(this);
+
     // Only submit the rows that are actually visible. With the log at its default cap of 1000 entries this turns a
     // full-list walk every frame into a handful of TextColored calls.
     ImGuiListClipper clipper;
@@ -64,14 +65,17 @@ void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
     }
 
     std::string& command = logger.consoleCommand;
+
     // EnterReturnsTrue lets Enter submit the command, matching the Send button - the expected interaction for a console.
-    const bool bEnterPressed = ImGui::InputTextWithHint("##Input", "Enter any command here", &command,
-                                                        ImGuiInputTextFlags_EnterReturnsTrue);
+    const bool bEnterPressed = ImGui::InputTextWithHint("##Input", "Enter any command here", &command, ImGuiInputTextFlags_EnterReturnsTrue);
+
     if (ImGui::IsItemActive() && bInteractingWithTextbox != nullptr)
         *bInteractingWithTextbox = true;
+
     // Re-focus the input box after an Enter submission so successive commands can be typed without clicking back in.
     if (bEnterPressed)
         ImGui::SetKeyboardFocusHere(-1);
+
     ImGui::SameLine();
     if (ImGui::Button("Send##consoleCommand") || bEnterPressed)
     {
@@ -82,6 +86,7 @@ void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
         const std::string token = tokenStart == std::string::npos
                                       ? std::string{}
                                       : command.substr(tokenStart, command.find_first_of(" \t", tokenStart) - tokenStart);
+
         // Copy the matched handler out before invoking it: a handler is free to register new commands (e.g. a "load
         // module" command), which can reallocate logger.commands and destroy the very std::function we are running.
         std::function<void(const std::string&)> handler;
@@ -93,12 +98,16 @@ void ULog::ImGuiConsole::display(bool* bInteractingWithTextbox) const noexcept
                 break;
             }
         }
+
         if (handler)
             handler(command);
+
         command.clear();
     }
+
     if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
         ImGui::SetScrollHereY(1.0f);
+
     ImGui::PopID();
 }
 

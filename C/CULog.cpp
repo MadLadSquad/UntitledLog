@@ -8,7 +8,7 @@ void ULog_Logger_setCrashOnError(const bool bError)
 }
 
 
-void ULog_Logger_setEnableLogging(bool bEnable)
+void ULog_Logger_setEnableLogging(const bool bEnable)
 {
     ULog::Logger::setEnableLogging(bEnable);
 }
